@@ -195,10 +195,10 @@ void CartesianTwistController::update(const ros::Time& now, const ros::Duration&
 
   unsigned num_joints = joints_.size();
 
-  if ((now - last_command_time) > ros::Duration(0.5))
-  {
-    manager_->requestStop(getName());
-  }
+  //if ((now - last_command_time) > ros::Duration(0.5))
+  //{
+  //  manager_->requestStop(getName());
+  //}
 
   // change the twist here
   if (solver_->CartToJnt(tgt_jnt_pos_, twist, tgt_jnt_vel_) < 0)
@@ -306,11 +306,11 @@ void CartesianTwistController::command(const geometry_msgs::TwistStamped::ConstP
     return;
   }
 
-  if (goal->header.frame_id.empty())
-  {
-    manager_->requestStop(getName());
-    return;
-  }
+////if (goal->header.frame_id.empty())
+ // {
+ //   manager_->requestStop(getName());
+ //   return;
+ // }
 
   KDL::Twist twist;
   twist(0) = goal->twist.linear.x;
