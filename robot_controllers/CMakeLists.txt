@@ -4,7 +4,7 @@ project(robot_controllers)
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-unused-parameter")
 endif()
-
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 find_package(orocos_kdl REQUIRED)
 find_package(Boost REQUIRED system)
 find_package(catkin REQUIRED
