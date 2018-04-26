@@ -74,6 +74,10 @@ int CartesianTwistController::init(ros::NodeHandle& nh, ControllerManager* manag
   nh.param<std::string>("root_name", root_link, "torso_lift_link");
   nh.param<std::string>("tip_name", tip_link, "wrist_roll_link");
 
+  //This is needed for collision avoidance
+  nh.param<std::string>("l_gripper_joint", l_name_, "l_gripper_finger_joint");
+  nh.param<std::string>("r_gripper_joint", r_name_, "r_gripper_finger_joint");
+
   // Load URDF
   urdf::Model model;
   if (!model.initParam("robot_description"))
@@ -86,6 +90,7 @@ int CartesianTwistController::init(ros::NodeHandle& nh, ControllerManager* manag
   planning_scene = new planning_scene::PlanningScene(kinematic_model);  
   current_state = &planning_scene->getCurrentStateNonConst();
   current_state->setToDefaultValues();
+
   
   ROS_INFO("INITIALIZED planning scene");
 
@@ -179,12 +184,15 @@ void CartesianTwistController::update(const ros::Time& now, const ros::Duration&
  
   for (unsigned jj = 0;jj<joints_.size(); jj++)
   {
-      //ROS_INFO_STREAM("Joint Name:"<<joints_[jj]->getName()<<"Value"<<joints_[jj]->getPosition());
-      current_state->setJointPositions(joints_[jj]->getName(), new double(joints_[jj]->getPosition()));
+    //ROS_INFO_STREAM("Joint Name:"<<joints_[jj]->getName()<<"Value"<<joints_[jj]->getPosition());
+    current_state->setJointPositions(joints_[jj]->getName(), new double(joints_[jj]->getPosition()));
   }
+  //The finger joints must be manually updated 
+  current_state->setJointPositions(r_name_,new double (manager_->getJointHandle(r_name_)->getPosition()));
+  current_state->setJointPositions(l_name_,new double (manager_->getJointHandle(l_name_)->getPosition()));
  
   collision_request.verbose = true;
-  collision_request.group_name = "arm";
+  //collision_request.group_name = "gripper";
   
   //planning_scene->getCurrentState().printStatePositions();
   collision_result.clear();

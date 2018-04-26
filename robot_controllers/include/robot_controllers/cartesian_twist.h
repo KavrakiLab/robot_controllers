@@ -158,6 +158,8 @@ private:
   ros::Time last_command_time_;
   bool is_active_;
   //These are uses for collision avoidance
+  std::string l_name_;
+  std::string r_name_;
   planning_scene::PlanningScene* planning_scene;
   robot_state::RobotState*  current_state;
   collision_detection::CollisionRequest collision_request;
