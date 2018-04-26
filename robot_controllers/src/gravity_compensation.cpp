@@ -67,7 +67,7 @@ int GravityCompensation::init(ros::NodeHandle& nh, ControllerManager* manager)
   // Populate the Chain
   std::string root, tip;
   nh.param<std::string>("root", root, "torso_lift_link");
-  nh.param<std::string>("tip", tip, "wrist_roll_link");
+  nh.param<std::string>("tip", tip, "gripper_link");
   if(!kdl_tree.getChain(root, tip, kdl_chain_))
   {
     ROS_ERROR("Could not construct chain from URDF");
