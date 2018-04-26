@@ -113,6 +113,8 @@ int CartesianTwistController::init(ros::NodeHandle& nh, ControllerManager* manag
   fksolver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
   unsigned num_joints = kdl_chain_.getNrOfJoints();
   tgt_jnt_pos_.resize(num_joints);
+  last_tgt_jnt_pos_.resize(num_joints);
+  extrp_jnt_pos_.resize(num_joints);
   tgt_jnt_vel_.resize(num_joints);
   last_tgt_jnt_vel_.resize(num_joints);
 
@@ -156,6 +158,7 @@ bool CartesianTwistController::start()
   {
     last_tgt_jnt_vel_(ii) = joints_[ii]->getVelocity();
     tgt_jnt_pos_(ii) = joints_[ii]->getPosition();
+    last_tgt_jnt_pos_(ii) = joints_[ii]->getPosition();
   }
   is_active_ = true;
   return true;
@@ -178,29 +181,7 @@ void CartesianTwistController::update(const ros::Time& now, const ros::Duration&
   // Need to initialize KDL structs
   if (!initialized_)
     return;  // Should never really hit this
-  collision_request.verbose = true;
-
-  // planning_scene->getCurrentState().printStatePositions();
  
-  for (unsigned jj = 0;jj<joints_.size(); jj++)
-  {
-    //ROS_INFO_STREAM("Joint Name:"<<joints_[jj]->getName()<<"Value"<<joints_[jj]->getPosition());
-    current_state->setJointPositions(joints_[jj]->getName(), new double(joints_[jj]->getPosition()));
-  }
-  //The finger joints must be manually updated 
-  current_state->setJointPositions(r_name_,new double (manager_->getJointHandle(r_name_)->getPosition()));
-  current_state->setJointPositions(l_name_,new double (manager_->getJointHandle(l_name_)->getPosition()));
- 
-  collision_request.verbose = true;
-  //collision_request.group_name = "gripper";
-  
-  //planning_scene->getCurrentState().printStatePositions();
-  collision_result.clear();
- 
-  planning_scene->checkSelfCollision(collision_request, collision_result);
-  ROS_INFO_STREAM("state is " << (collision_result.collision ? "in" : "not in") << " self collision");
-   //ROS_INFO_STREAM("Num of contact  is "<<collision_result.contact_count << " self collision");
-
   KDL::Frame cart_pose;
   // Copy desired twist and update time to local var to reduce lock contention
   KDL::Twist twist;
@@ -322,6 +303,52 @@ void CartesianTwistController::update(const ros::Time& now, const ros::Duration&
       }  
     }
   }
+  //THIS IS THE COLLISION AVOIDANCE PART
+ 
+
+  //extrapolating 4+1 timesteps in the future
+  for (unsigned ii = 0; ii < num_joints; ++ii)
+  {
+    extrp_jnt_pos_(ii)= tgt_jnt_pos_(ii) + tgt_jnt_vel_(ii) * dt_sec * 4;
+  }
+
+  for (unsigned jj = 0;jj<joints_.size(); jj++)
+  {
+    //ROS_INFO_STREAM("Joint Name:"<<joints_[jj]->getName()<<"Value"<<joints_[jj]->getPosition());
+    current_state->setJointPositions(joints_[jj]->getName(), &extrp_jnt_pos_(jj));
+  }
+  //The finger joints must be manually updated 
+  current_state->setJointPositions(r_name_,new double (manager_->getJointHandle(r_name_)->getPosition()));
+  current_state->setJointPositions(l_name_,new double (manager_->getJointHandle(l_name_)->getPosition()));
+ 
+  collision_request.verbose = true;
+  collision_result.clear();
+  //planning_scene->getCurrentState().printStatePositions();
+ 
+  planning_scene->checkSelfCollision(collision_request, collision_result);
+  ROS_INFO_STREAM("state is " << (collision_result.collision ? "in" : "not in") << " self collision");
+   //ROS_INFO_STREAM("Num of contact  is "<<collision_result.contact_count << " self collision");
+  
+
+  if (collision_result.collision)
+  {
+    for (size_t ii = 0; ii < joints_.size(); ++ii)
+    {
+        //We will send the last valid know state
+        tgt_jnt_pos_(ii) = last_tgt_jnt_pos_(ii);
+        tgt_jnt_vel_(ii) = 0.0;
+    }
+  }
+  else
+  {
+    for (size_t ii = 0; ii < joints_.size(); ++ii)
+    {
+        //This is the last known valid state
+        last_tgt_jnt_pos_(ii) = tgt_jnt_pos_(ii);
+    }
+  }
+
+    
 
 
   for (size_t ii = 0; ii < joints_.size(); ++ii)

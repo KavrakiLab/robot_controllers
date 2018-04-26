@@ -144,6 +144,8 @@ private:
   boost::shared_ptr<KDL::ChainIkSolverVel_wdls> solver_;
   boost::shared_ptr<KDL::ChainFkSolverPos_recursive> fksolver_;
   KDL::JntArray tgt_jnt_pos_;
+  KDL::JntArray last_tgt_jnt_pos_;
+  KDL::JntArray extrp_jnt_pos_;
   KDL::JntArray tgt_jnt_vel_;
   KDL::JntArray last_tgt_jnt_vel_;
 
