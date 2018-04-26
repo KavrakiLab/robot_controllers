@@ -65,6 +65,9 @@
 
 #include <robot_controllers/trajectory_spline_sampler.h>
 
+#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/robot_model_loader/robot_model_loader.h>
+
 namespace robot_controllers
 {
 
@@ -154,6 +157,12 @@ private:
   std::string twist_command_frame_;
   ros::Time last_command_time_;
   bool is_active_;
+  //These are uses for collision avoidance
+  planning_scene::PlanningScene* planning_scene;
+  robot_state::RobotState*  current_state;
+  collision_detection::CollisionRequest collision_request;
+  collision_detection::CollisionResult collision_result;
+
 };
 
 }  // namespace robot_controllers

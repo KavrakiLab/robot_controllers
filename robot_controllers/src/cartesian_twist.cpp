@@ -81,6 +81,13 @@ int CartesianTwistController::init(ros::NodeHandle& nh, ControllerManager* manag
     ROS_ERROR("Failed to parse URDF");
     return -1;
   }
+  robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
+  robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+  planning_scene = new planning_scene::PlanningScene(kinematic_model);  
+  current_state = &planning_scene->getCurrentStateNonConst();
+  current_state->setToDefaultValues();
+  
+  ROS_INFO("INITIALIZED planning scene");
 
   // Load the tree
   KDL::Tree kdl_tree;
@@ -166,6 +173,25 @@ void CartesianTwistController::update(const ros::Time& now, const ros::Duration&
   // Need to initialize KDL structs
   if (!initialized_)
     return;  // Should never really hit this
+  collision_request.verbose = true;
+
+  // planning_scene->getCurrentState().printStatePositions();
+ 
+  for (unsigned jj = 0;jj<joints_.size(); jj++)
+  {
+      //ROS_INFO_STREAM("Joint Name:"<<joints_[jj]->getName()<<"Value"<<joints_[jj]->getPosition());
+      current_state->setJointPositions(joints_[jj]->getName(), new double(joints_[jj]->getPosition()));
+  }
+ 
+  collision_request.verbose = true;
+  collision_request.group_name = "arm";
+  
+  //planning_scene->getCurrentState().printStatePositions();
+  collision_result.clear();
+ 
+  planning_scene->checkSelfCollision(collision_request, collision_result);
+  ROS_INFO_STREAM("state is " << (collision_result.collision ? "in" : "not in") << " self collision");
+   //ROS_INFO_STREAM("Num of contact  is "<<collision_result.contact_count << " self collision");
 
   KDL::Frame cart_pose;
   // Copy desired twist and update time to local var to reduce lock contention

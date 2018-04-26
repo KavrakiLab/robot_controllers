@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robot_controllers)
 
+add_compile_options(-std=c++11)
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-unused-parameter")
 endif()
@@ -9,6 +10,8 @@ find_package(orocos_kdl REQUIRED)
 find_package(Boost REQUIRED system)
 find_package(catkin REQUIRED
   COMPONENTS
+    moveit_core
+    moveit_ros_planning
     actionlib
     actionlib_msgs
     angles
@@ -30,6 +33,7 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
+    moveit_core
     actionlib
     actionlib_msgs
     control_msgs
